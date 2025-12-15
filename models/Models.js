@@ -1,7 +1,7 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/database.js";
 
-import UserModels from "./userModels.js";
+import UserModels from "./UserModels.js";
 import SessionModels from "./SessionModels.js";
 import ChatMessageModels from "./ChatMessage.js";
 
