@@ -3,12 +3,20 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: "postgres",
-      dialectOptions: {
-        ssl: process.env.NODE_ENV === "production", // Aktifkan SSL untuk Railway
-      },
+      logging: false,
+      dialectOptions: isProduction
+        ? {
+            ssl: {
+              require: true,
+              rejectUnauthorized: false, // 🔥 WAJIB UNTUK RAILWAY
+            },
+          }
+        : {},
     })
   : new Sequelize(
       process.env.DB_NAME,
@@ -18,6 +26,7 @@ const sequelize = process.env.DATABASE_URL
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
         dialect: "postgres",
+        logging: false,
       }
     );
 
