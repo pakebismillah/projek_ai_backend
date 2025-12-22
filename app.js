@@ -12,7 +12,12 @@ dotenv.config();
 const app = express();
 
 // Middleware global
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+app.options("*", cors());
 app.use(express.json());
 
 // Routes
