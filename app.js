@@ -15,7 +15,7 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://projekaifrontend-production.up.railway.app/"
+    "https://projekaifrontend-production.up.railway.app"
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
