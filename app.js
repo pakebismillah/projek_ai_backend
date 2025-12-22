@@ -12,6 +12,12 @@ dotenv.config();
 const app = express();
 
 // Middleware global
+app.use((req, res, next) => {
+  console.log("🔥 REQUEST MASUK:", req.method, req.url);
+  console.log("🌍 ORIGIN:", req.headers.origin);
+  next();
+});
+
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -21,8 +27,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
-app.use(express.json());
-
 app.use(express.json());
 
 // Routes
