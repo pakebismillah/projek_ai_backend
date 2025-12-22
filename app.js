@@ -13,11 +13,16 @@ const app = express();
 
 // Middleware global
 app.use(cors({
-  origin: "*",
+  origin: [
+    "http://localhost:5173",
+    "https://projekaifrontend-production.up.railway.app/"
+  ],
+  credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
-app.options("*", cors());
+app.use(express.json());
+
 app.use(express.json());
 
 // Routes
