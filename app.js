@@ -5,6 +5,9 @@ import userRoutes from "./routes/userRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import sequelize from "./config/database.js";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
 
 // nanti bisa tambah: sessionRoutes, chatRoutes, dsb
 
@@ -27,12 +30,34 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
+
+// Security middleware
+app.use(helmet());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Terlalu banyak percobaan auth 😵" }
+});
+
+const sessionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: "Session kebanyakan, istirahat dulu 😄" }
+});
+
+const chatLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  message: { error: "Chat terlalu cepat ⚡" }
+});
+
 app.use(express.json());
 
 // Routes
-app.use("/users", userRoutes);
-app.use("/sessions", sessionRoutes);
-app.use("/chats", chatRoutes);
+app.use("/users", authLimiter, userRoutes);
+app.use("/sessions", sessionLimiter, sessionRoutes);
+app.use("/chats", chatLimiter, chatRoutes);
 
 
 // Root endpoint

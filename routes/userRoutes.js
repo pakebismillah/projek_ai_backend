@@ -7,12 +7,15 @@ import { requireRole } from "../middlewares/roleMiddlewares.js";
 const router = express.Router();
 
 // endpoint: GET /users/me
-router.get("/me", authMiddleware, getProfile);
+router.get("/me", authMiddleware(), getProfile);
 // Sinkronisasi user dari Firebase
-router.post("/sync", syncUser);
-
+router.post(
+  "/sync",
+  authMiddleware({ allowUnsynced: true }),
+  syncUser
+);
 // endpoint: GET /users (hanya admin)
-router.get("/", authMiddleware, requireRole(["admin"]), getAllUsers);
+router.get("/", authMiddleware(), requireRole(["admin"]), getAllUsers);
 
 
 export default router;

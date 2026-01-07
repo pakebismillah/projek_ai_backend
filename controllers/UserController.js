@@ -5,8 +5,13 @@ import { Op } from "sequelize";
 const { User } = models;
 
 export const getProfile = async (req, res) => {
+  console.log(`\n--- 🙋‍♂️ CONTROLLER: getProfile @ ${new Date().toLocaleTimeString()} ---`);
   try {
-    console.log("📍 GET /users/me - User:", req.user?.email);
+    if (!req.user) {
+      console.log("❗️ [404] No user attached to request. Cannot get profile.");
+      return res.status(404).json({ message: "User profile not found after auth." });
+    }
+    console.log("✅ Returning profile for user:", req.user.toJSON());
     res.json(req.user);
   } catch (error) {
     console.error("❌ Error in getProfile:", error);
@@ -30,45 +35,58 @@ export const getAllUsers = async (req, res) => {
 
 // POST /users/sync
 export const syncUser = async (req, res) => {
+  console.log(`\n--- 🔄 CONTROLLER: syncUser @ ${new Date().toLocaleTimeString()} ---`);
   try {
-    console.log("📍 POST /users/sync - Request body:", req.body);
-    
     const { firebase_uid, name, email } = req.body;
+    console.log("➡️ Received data:", { firebase_uid, name, email });
 
     if (!firebase_uid || !email) {
-      console.log("❌ Missing required fields");
+      console.log("❗️ [400] Missing firebase_uid or email in request body.");
       return res.status(400).json({ message: "firebase_uid dan email wajib diisi" });
     }
 
-    // Cari user berdasarkan email (karena email unik)
-    let user = await User.findOne({ where: { email } });
-
-    if (user) {
-      // Kalau UID berbeda, update UID-nya
-      if (user.firebase_uid !== firebase_uid) {
-        console.log("🔁 Firebase UID updated for user:", email);
-        await user.update({ firebase_uid });
+    // Pakai findOrCreate untuk proses yang lebih atomik dan bersih
+    const [user, created] = await User.findOrCreate({
+      where: { email: email },
+      defaults: {
+        firebase_uid: firebase_uid,
+        name: name,
+        email: email,
+        role: "user",
       }
+    });
 
-      // Sinkronkan data lain
-      await user.update({ name, email });
-      console.log("✅ User data synced");
+    if (created) {
+      console.log("✅ User CREATED:", user.toJSON());
+      return res.status(201).json({ message: "User baru berhasil dibuat", user });
+    }
+
+    // Jika user sudah ada, cek apakah perlu update
+    console.log("✅ User FOUND:", user.toJSON());
+    let isUpdated = false;
+    const updates = {};
+    if (user.firebase_uid !== firebase_uid) {
+      updates.firebase_uid = firebase_uid;
+      isUpdated = true;
+    }
+    if (user.name !== name) {
+      updates.name = name;
+      isUpdated = true;
+    }
+
+    if (isUpdated) {
+      console.log("... User data is different, updating...");
+      await user.update(updates);
+      console.log("✅ User data SYNCED:", user.toJSON());
       return res.json({ message: "User sudah ada, data disinkronkan", user });
     }
 
-    // Kalau belum ada sama sekali, buat user baru
-    console.log("🆕 Creating new user:", email);
-    user = await User.create({
-      firebase_uid,
-      name,
-      email,
-      role: "user",
-    });
-    console.log("✅ New user created:", user.email);
+    console.log("... User data is already up-to-date.");
+    res.json({ message: "User sudah ada, tidak ada perubahan", user });
 
-    res.json({ message: "User baru berhasil dibuat", user });
   } catch (error) {
     console.error("❌ Error in syncUser:", error);
     res.status(500).json({ message: "Terjadi kesalahan server", error: error.message });
   }
 };
+
